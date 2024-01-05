@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 #dap-rs = { path = "./dap-rs", features = [ "defmt" ]}
 dap-rs = { git = "https://github.com/korken89/dap-rs/", features = [ "defmt" ]}
 
-embassy-stm32 = { version = "0.1.0", features = [ "defmt", "stm32f103c8", "unstable-pac", "memory-x", "time-driver-any" ]  }
+embassy-stm32 = { version = "0.1.0", features = [ "defmt", "stm32f103c8", "unstable-pac", "time-driver-any" ]  }
 embassy-sync = { version = "0.5.0", features = ["defmt"] }
 embassy-executor = { version = "0.4.0", features = ["arch-cortex-m", "executor-thread", "defmt", "integrated-timers"] }
 embassy-time = { version = "0.2", features = ["defmt", "defmt-timestamp-uptime", "tick-hz-32_768"] }
@@ -33,12 +33,18 @@ num_enum = { version = "0.7.1", default-features = false }
 opt-level = "s"
 
 [profile.release]
+codegen-units = 1
 debug = 2
+debug-assertions = false
+incremental = false
+lto = "fat"
+opt-level = 's'
+overflow-checks = false
 
 [patch.crates-io]
-embassy-stm32 = { path = "../embassy/embassy-stm32" }
-embassy-sync = { path = "../embassy/embassy-sync" }
-embassy-executor = { path = "../embassy/embassy-executor" }
-embassy-time = { path = "../embassy/embassy-time" }
-embassy-usb = { path = "../embassy/embassy-usb" }
-embassy-futures = { path = "../embassy/embassy-futures" }
+embassy-stm32 = { path = "../../embassy/embassy-stm32" }
+embassy-sync = { path = "../../embassy/embassy-sync" }
+embassy-executor = { path = "../../embassy/embassy-executor" }
+embassy-time = { path = "../../embassy/embassy-time" }
+embassy-usb = { path = "../../embassy/embassy-usb" }
+embassy-futures = { path = "../../embassy/embassy-futures" }

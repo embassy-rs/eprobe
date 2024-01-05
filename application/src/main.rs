@@ -5,14 +5,15 @@ use dap_rs::dap::{Dap, DapLeds, DapVersion};
 use dap_rs::swd::{self, APnDP, DPRegister};
 use dap_rs::swj::Dependencies;
 use dap_rs::swo::Swo;
-use defmt::todo;
-use defmt::{panic, *};
+use defmt::{todo, *};
 use embassy_executor::Spawner;
 use embassy_stm32::gpio::{Flex, Level, Output, Pull, Speed};
 use embassy_stm32::time::Hertz;
 use embassy_stm32::usb::Driver;
 use embassy_stm32::{bind_interrupts, peripherals, usb, Config};
-use embassy_time::{Delay, Timer};
+use embassy_time::{Delay, Duration, Timer};
+use embassy_usb::class::dfu::app_mode::{usb_dfu, DfuState};
+use embassy_usb::class::dfu::consts::DfuAttributes;
 use embassy_usb::driver::{Endpoint, EndpointIn, EndpointOut};
 use embassy_usb::types::StringIndex;
 use embassy_usb::{Builder, Handler, UsbDevice};
@@ -31,7 +32,7 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) {
 }
 
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let mut config = Config::default();
     config.rcc.hse = Some(Hertz(8_000_000));
     config.rcc.sys_ck = Some(Hertz(72_000_000));
@@ -101,9 +102,16 @@ async fn main(_spawner: Spawner) {
         iface_string: iface_string,
     }));
 
+    static STATE: StaticCell<DfuState<DfuHandler>> = StaticCell::new();
+    let attrs = DfuAttributes::CAN_DOWNLOAD
+        | DfuAttributes::WILL_DETACH
+        | DfuAttributes::MANIFESTATION_TOLERANT;
+    let state = STATE.init(DfuState::new(DfuHandler { spawner }, attrs));
+    usb_dfu(&mut builder, state);
+
     // Start USB.
     let usb = builder.build();
-    unwrap!(_spawner.spawn(usb_task(usb)));
+    unwrap!(spawner.spawn(usb_task(usb)));
 
     // Process DAP commands in a loop.
     let deps = Deps::new(Flex::new(t_jtck), Flex::new(t_jtms));
@@ -182,12 +190,6 @@ impl Deps {
         ck.set_as_output(Speed::VeryHigh);
 
         Self { ck, io }
-    }
-
-    pub fn line_reset(&mut self) {
-        self.shift_out(0xFFFF_FFFF, 32);
-        self.shift_out(0xFFFF_FFFF, 32);
-        self.shift_out(0, 32);
     }
 
     fn req(&mut self, port: APnDP, dir: Dir, addr: DPRegister) {
@@ -390,4 +392,27 @@ impl Swo for NoSwo {
     fn status(&mut self) -> dap_rs::swo::SwoStatus {
         todo!()
     }
+}
+
+struct DfuHandler {
+    spawner: Spawner,
+}
+
+impl embassy_usb::class::dfu::app_mode::Handler for DfuHandler {
+    fn detach(&mut self) {
+        self.spawner.spawn(reboot_task()).ok();
+    }
+}
+
+#[embassy_executor::task]
+async fn reboot_task() {
+    Timer::after(Duration::from_millis(500)).await;
+
+    extern "C" {
+        static mut __persist: u32;
+    }
+    const PERSIST_BOOT_MAGIC: u32 = 0x93f2af30;
+
+    unsafe { __persist = PERSIST_BOOT_MAGIC };
+    cortex_m::peripheral::SCB::sys_reset();
 }

@@ -3,5 +3,9 @@
     "rust-analyzer.check.noDefaultFeatures": true,
     "rust-analyzer.cargo.noDefaultFeatures": true,
     "rust-analyzer.cargo.target": "thumbv7m-none-eabi",
+    "rust-analyzer.linkedProjects": [
+        "application/Cargo.toml",
+        "bootloader/Cargo.toml",
+    ]
 }
   

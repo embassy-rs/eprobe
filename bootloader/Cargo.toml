@@ -1,0 +1,54 @@
+[package]
+edition = "2021"
+name = "eprobe-bootloader"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+
+[features]
+defmt = [
+    "dep:defmt",
+    "dep:defmt-rtt",
+    "dep:panic-probe",
+    "embassy-stm32/defmt",
+    "embassy-sync/defmt",
+    "embassy-usb/defmt",
+]
+
+[dependencies]
+embassy-stm32 = { version = "0.1.0", features = [ "stm32f103c8", "unstable-pac" ]  }
+embassy-sync = { version = "0.5.0", features = [] }
+embassy-usb = { version = "0.1.0", features = [] }
+embassy-futures = { version = "0.1.0" }
+
+defmt = { version = "0.3", optional = true }
+defmt-rtt = { version = "0.4", optional = true }
+panic-probe = { version = "0.3", optional = true, features = ["print-defmt"]}
+panic-halt = "0.2.0"
+
+cortex-m = { version = "0.7.6", features = ["inline-asm", "critical-section-single-core"] }
+cortex-m-rt = "0.7.0"
+embedded-hal = "0.2.6"
+futures = { version = "0.3.17", default-features = false, features = ["async-await"] }
+heapless = { version = "0.8", default-features = false }
+nb = "1.0.0"
+static_cell = "2.0.0"
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1
+debug = 2
+debug-assertions = false
+incremental = false
+lto = "fat"
+opt-level = 's'
+overflow-checks = false
+
+[patch.crates-io]
+embassy-stm32 = { path = "../../embassy/embassy-stm32" }
+embassy-sync = { path = "../../embassy/embassy-sync" }
+embassy-executor = { path = "../../embassy/embassy-executor" }
+embassy-time = { path = "../../embassy/embassy-time" }
+embassy-usb = { path = "../../embassy/embassy-usb" }
+embassy-futures = { path = "../../embassy/embassy-futures" }
