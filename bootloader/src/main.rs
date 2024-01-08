@@ -83,8 +83,8 @@ fn main() -> ! {
     // Create embassy-usb Config.
     let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
     config.manufacturer = Some("Embassy");
-    config.product = Some("Embassy CMSIS-DAP bootloader");
-    config.serial_number = Some("12345678");
+    config.product = Some("Embassy Probe bootloader");
+    config.serial_number = Some(embassy_stm32::uid::uid_hex());
 
     const CONTROL_BUF_SIZE: usize = 1024;
 

@@ -69,8 +69,8 @@ async fn main(spawner: Spawner) {
     // Create embassy-usb Config.
     let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
     config.manufacturer = Some("Embassy");
-    config.product = Some("Embassy CMSIS-DAP");
-    config.serial_number = Some("12345678");
+    config.product = Some("Embassy Probe CMSIS-DAP");
+    config.serial_number = Some(embassy_stm32::uid::uid_hex());
 
     // Create embassy-usb DeviceBuilder using the driver and config.
     static DEVICE_DESC: StaticCell<[u8; 256]> = StaticCell::new();
