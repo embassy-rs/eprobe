@@ -123,32 +123,42 @@ async fn main(spawner: Spawner) {
     loop {
         read_ep.wait_enabled().await;
 
-        let req_len = read_packet(&mut read_ep, &mut req).await;
+        let req_len = match read_packet(&mut read_ep, &mut req).await {
+            Ok(n) => n,
+            Err(e) => {
+                warn!("failed to read from USB: {:?}", e);
+                continue;
+            }
+        };
         let resp_len = dap.process_command(&req[..req_len], &mut resp, DapVersion::V2);
 
-        write_packet(&mut write_ep, &resp[..resp_len]).await;
-    }
-}
-
-async fn read_packet(ep: &mut impl EndpointOut, buf: &mut [u8]) -> usize {
-    let mut n = 0;
-
-    loop {
-        let i = ep.read(&mut buf[n..]).await.unwrap();
-        n += i;
-        if i < 64 {
-            return n;
+        if let Err(e) = write_packet(&mut write_ep, &resp[..resp_len]).await {
+            warn!("failed to write to USB: {:?}", e);
+            continue;
         }
     }
 }
 
-async fn write_packet(ep: &mut impl EndpointIn, buf: &[u8]) {
+async fn read_packet(ep: &mut impl EndpointOut, buf: &mut [u8]) -> Result<usize, EndpointError> {
+    let mut n = 0;
+
+    loop {
+        let i = ep.read(&mut buf[n..]).await?;
+        n += i;
+        if i < 64 {
+            return Ok(n);
+        }
+    }
+}
+
+async fn write_packet(ep: &mut impl EndpointIn, buf: &[u8]) -> Result<(), EndpointError> {
     for chunk in buf.chunks(64) {
-        ep.write(chunk).await.unwrap();
+        ep.write(chunk).await?;
     }
     if buf.len() % 64 == 0 {
-        ep.write(&[]).await.unwrap();
+        ep.write(&[]).await?;
     }
+    Ok(())
 }
 
 struct Control {
