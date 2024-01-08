@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use cortex_m_rt::{exception, ExceptionFrame};
 use dap_rs::dap::{Dap, DapLeds, DapVersion};
 use dap_rs::swd::{self, APnDP, DPRegister};
 use dap_rs::swj::Dependencies;
@@ -14,11 +15,17 @@ use embassy_stm32::{bind_interrupts, peripherals, usb, Config};
 use embassy_time::{Delay, Duration, Timer};
 use embassy_usb::class::dfu::app_mode::{usb_dfu, DfuState};
 use embassy_usb::class::dfu::consts::DfuAttributes;
-use embassy_usb::driver::{Endpoint, EndpointIn, EndpointOut};
+use embassy_usb::driver::{Endpoint, EndpointError, EndpointIn, EndpointOut};
+use embassy_usb::msos::{self, windows_version};
 use embassy_usb::types::StringIndex;
 use embassy_usb::{Builder, Handler, UsbDevice};
 use static_cell::StaticCell;
 use {defmt_rtt as _, panic_probe as _};
+
+#[exception]
+unsafe fn HardFault(_: &ExceptionFrame) -> ! {
+    cortex_m::peripheral::SCB::sys_reset()
+}
 
 bind_interrupts!(struct Irqs {
     USB_LP_CAN1_RX0 => usb::InterruptHandler<peripherals::USB>;
@@ -71,12 +78,16 @@ async fn main(spawner: Spawner) {
     config.manufacturer = Some("Embassy");
     config.product = Some("Embassy Probe CMSIS-DAP");
     config.serial_number = Some(embassy_stm32::uid::uid_hex());
+    config.device_class = 0xEF;
+    config.device_sub_class = 0x02;
+    config.device_protocol = 0x01;
+    config.composite_with_iads = true;
 
     // Create embassy-usb DeviceBuilder using the driver and config.
     static DEVICE_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
-    static MSOS_DESC: StaticCell<[u8; 128]> = StaticCell::new();
+    static MSOS_DESC: StaticCell<[u8; 196]> = StaticCell::new();
     static CONTROL_BUF: StaticCell<[u8; 128]> = StaticCell::new();
     let driver = Driver::new(p.USB, Irqs, usb_dp, usb_dm);
     let mut builder = Builder::new(
@@ -85,12 +96,20 @@ async fn main(spawner: Spawner) {
         &mut DEVICE_DESC.init([0; 256])[..],
         &mut CONFIG_DESC.init([0; 256])[..],
         &mut BOS_DESC.init([0; 256])[..],
-        &mut MSOS_DESC.init([0; 128])[..],
+        &mut MSOS_DESC.init([0; 196])[..],
         &mut CONTROL_BUF.init([0; 128])[..],
     );
 
+    builder.msos_descriptor(windows_version::WIN8_1, 0);
+
     let iface_string = builder.string();
     let mut function = builder.function(0xFF, 0, 0);
+    function.msos_feature(msos::CompatibleIdFeatureDescriptor::new("WINUSB", ""));
+    function.msos_feature(msos::RegistryPropertyFeatureDescriptor::new(
+        "DeviceInterfaceGUIDs",
+        // CMSIS-DAP standard GUID, from https://arm-software.github.io/CMSIS_5/DAP/html/group__DAP__ConfigUSB__gr.html
+        msos::PropertyData::RegMultiSz(&["{CDB3B5AD-293B-4663-AA36-1AAE46463776}"]),
+    ));
     let mut interface = function.interface();
     let mut altsetting = interface.alt_setting(0xFF, 0, 0, Some(iface_string));
     let mut read_ep = altsetting.endpoint_bulk_out(64);

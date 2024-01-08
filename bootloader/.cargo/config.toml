@@ -7,9 +7,10 @@ build-std-features = ["panic_immediate_abort"]
 runner = "probe-rs run --chip STM32F103C8 --probe 0483:3748:370A03145116303030303032"
 rustflags = [
   # Code-size optimizations.
-  "-Z", "trap-unreachable=no",
-  #"-C", "no-vectorize-loops",
-  #"-C", "force-frame-pointers=yes",
+  "-Ztrap-unreachable=no",
+  "-Cno-vectorize-loops",
+  "-Cforce-frame-pointers=no",
+  "-Cinline-threshold=100"
 ]
 
 [build]

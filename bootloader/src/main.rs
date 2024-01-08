@@ -3,21 +3,28 @@
 
 mod fmt;
 
+use cortex_m_rt::{exception, ExceptionFrame};
 use embassy_stm32::flash::{Blocking, Flash};
+use embassy_usb::msos::{self, windows_version};
 #[cfg(not(feature = "defmt"))]
 use panic_halt as _;
 #[cfg(feature = "defmt")]
 use {defmt_rtt as _, panic_probe as _};
 
 use embassy_futures::block_on;
-use embassy_stm32::gpio::{Flex, Level, Output, Pull, Speed};
+use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_stm32::time::Hertz;
 use embassy_stm32::usb::Driver;
 use embassy_stm32::{bind_interrupts, peripherals, usb, Config};
 use embassy_usb::class::dfu::consts::{DfuAttributes, Status};
 use embassy_usb::class::dfu::dfu_mode::{usb_dfu, DfuState, Handler};
-use embassy_usb::{Builder, UsbDevice};
+use embassy_usb::Builder;
 use static_cell::StaticCell;
+
+#[exception]
+unsafe fn HardFault(_: &ExceptionFrame) -> ! {
+    cortex_m::peripheral::SCB::sys_reset()
+}
 
 bind_interrupts!(struct Irqs {
     USB_LP_CAN1_RX0 => usb::InterruptHandler<peripherals::USB>;
@@ -92,7 +99,7 @@ fn main() -> ! {
     static DEVICE_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
-    static MSOS_DESC: StaticCell<[u8; 128]> = StaticCell::new();
+    static MSOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static CONTROL_BUF: StaticCell<[u8; CONTROL_BUF_SIZE]> = StaticCell::new();
     let driver = Driver::new(p.USB, Irqs, usb_dp, usb_dm);
     let mut builder = Builder::new(
@@ -101,9 +108,21 @@ fn main() -> ! {
         &mut DEVICE_DESC.init([0; 256])[..],
         &mut CONFIG_DESC.init([0; 256])[..],
         &mut BOS_DESC.init([0; 256])[..],
-        &mut MSOS_DESC.init([0; 128])[..],
+        &mut MSOS_DESC.init([0; 256])[..],
         &mut CONTROL_BUF.init([0; CONTROL_BUF_SIZE])[..],
     );
+
+    // Add the Microsoft OS Descriptor (MSOS/MOD) descriptor.
+    // We tell Windows that this entire device is compatible with the "WINUSB" feature,
+    // which causes it to use the built-in WinUSB driver automatically, which in turn
+    // can be used by libusb/rusb/nusb without needing a custom driver or INF file.
+    builder.msos_descriptor(windows_version::WIN8_1, 0);
+    builder.msos_feature(msos::CompatibleIdFeatureDescriptor::new("WINUSB", ""));
+    builder.msos_feature(msos::RegistryPropertyFeatureDescriptor::new(
+        "DeviceInterfaceGUIDs",
+        // Random GUID, for Embassy Probe bootloader.
+        msos::PropertyData::RegMultiSz(&["{B3E4F8E0-7460-4B2B-8F68-1E4178DD83B8}"]),
+    ));
 
     let handler = DfuHandler {
         flash: Flash::new_blocking(p.FLASH),

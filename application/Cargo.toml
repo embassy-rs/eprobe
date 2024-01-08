@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 
 
 [dependencies]
-#dap-rs = { path = "./dap-rs", features = [ "defmt" ]}
+#dap-rs = { path = "../dap-rs", features = [ "defmt" ]}
 dap-rs = { git = "https://github.com/korken89/dap-rs/", features = [ "defmt" ]}
 
 embassy-stm32 = { version = "0.1.0", features = [ "defmt", "stm32f103c8", "unstable-pac", "time-driver-any" ]  }
