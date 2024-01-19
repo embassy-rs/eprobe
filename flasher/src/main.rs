@@ -94,9 +94,10 @@ fn main() {
 
     let mmap = sess.target().memory_map.clone();
     let mut loader = FlashLoader::new(mmap, TargetDescriptionSource::BuiltIn);
-    loader
-        .load_elf_data(&mut File::open("bootloader.elf").unwrap())
-        .unwrap();
+    let mut bl = File::open("bootloader.elf").unwrap();
+    let mut app = File::open("application.elf").unwrap();
+    loader.load_elf_data(&mut bl).unwrap();
+    loader.load_elf_data(&mut app).unwrap();
 
     let mut opts = DownloadOptions::default();
     opts.verify = true;
