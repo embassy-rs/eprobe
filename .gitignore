@@ -1,3 +1,4 @@
 dap-rs
 target
 *.bin
+*.elf
