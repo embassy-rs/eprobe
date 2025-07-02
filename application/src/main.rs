@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use cortex_m::interrupt::InterruptNumber;
 use cortex_m_rt::{exception, ExceptionFrame};
 use dap_rs::dap::{Dap, DapLeds, DapVersion};
 use dap_rs::swd::{self, APnDP, DPRegister};
@@ -9,6 +10,7 @@ use dap_rs::swo::Swo;
 use defmt::{todo, *};
 use embassy_executor::Spawner;
 use embassy_stm32::gpio::{Flex, Level, Output, Pull, Speed};
+use embassy_stm32::pac;
 use embassy_stm32::time::Hertz;
 use embassy_stm32::usb::Driver;
 use embassy_stm32::{bind_interrupts, peripherals, usb, Config};
@@ -40,6 +42,42 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
+    #[derive(Copy, Clone)]
+    struct Irq(u16);
+    unsafe impl InterruptNumber for Irq {
+        fn number(self) -> u16 {
+            self.0
+        }
+    }
+    for i in 0..256 {
+        cortex_m::peripheral::NVIC::mask(Irq(i));
+    }
+
+    unsafe { (*cortex_m::peripheral::SCB::PTR).vtor.write(0x4000) }
+
+    // make sure usb renum works even if doing a warm boot (eg from the ST bootloader)
+    pac::RCC.apb1rstr().modify(|w| {
+        w.set_usbrst(true);
+    });
+    pac::RCC.apb2rstr().modify(|w| {
+        w.set_gpioarst(true);
+        w.set_gpiobrst(true);
+        w.set_gpiocrst(true);
+        w.set_gpiodrst(true);
+        w.set_gpioerst(true);
+        w.set_gpiofrst(true);
+        w.set_afiorst(true);
+    });
+    pac::RCC.apb2rstr().modify(|w| {
+        w.set_gpioarst(false);
+        w.set_gpiobrst(false);
+        w.set_gpiocrst(false);
+        w.set_gpiodrst(false);
+        w.set_gpioerst(false);
+        w.set_gpiofrst(false);
+        w.set_afiorst(false);
+    });
+
     let mut config = Config::default();
     {
         use embassy_stm32::rcc::*;
