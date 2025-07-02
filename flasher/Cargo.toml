@@ -6,10 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+aes = "0.8"
 anyhow = "1.0.79"
+cipher = "0.4"
 clap = "4.5.15"
 futures-lite = "2.3.0"
 hex-literal = "1"
+log = "0.4.27"
 nusb = "0.1.10"
 pretty_env_logger = "0.5.0"
 probe-rs = "0.29"

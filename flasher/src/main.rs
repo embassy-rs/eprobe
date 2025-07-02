@@ -95,8 +95,8 @@ fn main() {
 
     let mmap = sess.target().memory_map.clone();
     let mut loader = FlashLoader::new(mmap, TargetDescriptionSource::BuiltIn);
-    let mut bl = File::open("bootloader.elf").unwrap();
-    let mut app = File::open("application.elf").unwrap();
+    let mut bl = File::open("../../build/bootloader.elf").unwrap();
+    let mut app = File::open("../../build/application.elf").unwrap();
     loader
         .load_image(&mut sess, &mut bl, Format::Elf(ElfOptions::default()), None)
         .unwrap();
