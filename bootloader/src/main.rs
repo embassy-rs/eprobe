@@ -55,9 +55,22 @@ fn main() -> ! {
     }
 
     let mut config = Config::default();
-    config.rcc.hse = Some(Hertz(8_000_000));
-    config.rcc.sys_ck = Some(Hertz(72_000_000));
-    config.rcc.pclk1 = Some(Hertz(36_000_000));
+    {
+        use embassy_stm32::rcc::*;
+        config.rcc.hse = Some(Hse {
+            freq: Hertz(8_000_000),
+            mode: HseMode::Oscillator,
+        });
+        config.rcc.pll = Some(Pll {
+            src: PllSource::HSE,
+            prediv: PllPreDiv::DIV1,
+            mul: PllMul::MUL9,
+        });
+        config.rcc.sys = Sysclk::PLL1_P;
+        config.rcc.ahb_pre = AHBPrescaler::DIV1;
+        config.rcc.apb1_pre = APBPrescaler::DIV2;
+        config.rcc.apb2_pre = APBPrescaler::DIV1;
+    }
     let p = embassy_stm32::init(config);
 
     info!("Hello World!");
@@ -81,7 +94,7 @@ fn main() -> ! {
 
     // Seems not all stlink boards have the usb_renum transistor?
     // try forcing usb reenumeration with both USB_RENUM pin and pulling DP low directly.
-    let usb_dp_renum = Output::new(&mut usb_dp, Level::Low, Speed::Low);
+    let usb_dp_renum = Output::new(usb_dp.reborrow(), Level::Low, Speed::Low);
     let mut usb_renum = Output::new(usb_renum, Level::Low, Speed::Low);
     cortex_m::asm::delay(1_000_000);
     usb_renum.set_high();
@@ -96,7 +109,6 @@ fn main() -> ! {
     const CONTROL_BUF_SIZE: usize = 1024;
 
     // Create embassy-usb DeviceBuilder using the driver and config.
-    static DEVICE_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static MSOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
@@ -105,7 +117,6 @@ fn main() -> ! {
     let mut builder = Builder::new(
         driver,
         config,
-        &mut DEVICE_DESC.init([0; 256])[..],
         &mut CONFIG_DESC.init([0; 256])[..],
         &mut BOS_DESC.init([0; 256])[..],
         &mut MSOS_DESC.init([0; 256])[..],

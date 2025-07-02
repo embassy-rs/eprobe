@@ -3,8 +3,7 @@ build-std = ["core"]
 build-std-features = ["panic_immediate_abort"]
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-# replace STM32F103C8 with your chip as listed in `probe-rs chip list`
-runner = "probe-rs run --chip STM32F103C8 --probe 0483:3748:3A0113135316303030303032"
+runner = "probe-rs run --chip STM32F103C8 --probe c0de:cafe:1C2703145216303030303032"
 rustflags = [
   # Code-size optimizations.
   "-Ztrap-unreachable=no",

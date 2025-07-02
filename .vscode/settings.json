@@ -2,11 +2,11 @@
     "rust-analyzer.check.allTargets": false,
     "rust-analyzer.check.noDefaultFeatures": true,
     "rust-analyzer.cargo.noDefaultFeatures": true,
-    "rust-analyzer.cargo.target": "thumbv7m-none-eabi",
+    //"rust-analyzer.cargo.target": "thumbv7m-none-eabi",
     "rust-analyzer.linkedProjects": [
-        "application/Cargo.toml",
+        //"application/Cargo.toml",
         //"bootloader/Cargo.toml",
-        //"flasher/Cargo.toml",
+        "flasher/Cargo.toml",
     ]
 }
   

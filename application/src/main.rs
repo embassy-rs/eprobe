@@ -41,9 +41,22 @@ async fn usb_task(mut device: UsbDevice<'static, MyDriver>) {
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let mut config = Config::default();
-    config.rcc.hse = Some(Hertz(8_000_000));
-    config.rcc.sys_ck = Some(Hertz(72_000_000));
-    config.rcc.pclk1 = Some(Hertz(36_000_000));
+    {
+        use embassy_stm32::rcc::*;
+        config.rcc.hse = Some(Hse {
+            freq: Hertz(8_000_000),
+            mode: HseMode::Oscillator,
+        });
+        config.rcc.pll = Some(Pll {
+            src: PllSource::HSE,
+            prediv: PllPreDiv::DIV1,
+            mul: PllMul::MUL9,
+        });
+        config.rcc.sys = Sysclk::PLL1_P;
+        config.rcc.ahb_pre = AHBPrescaler::DIV1;
+        config.rcc.apb1_pre = APBPrescaler::DIV2;
+        config.rcc.apb2_pre = APBPrescaler::DIV1;
+    }
     let p = embassy_stm32::init(config);
 
     info!("Hello World!");
@@ -67,7 +80,7 @@ async fn main(spawner: Spawner) {
 
     // Seems not all stlink boards have the usb_renum transistor?
     // try forcing usb reenumeration with both USB_RENUM pin and pulling DP low directly.
-    let usb_dp_renum = Output::new(&mut usb_dp, Level::Low, Speed::Low);
+    let usb_dp_renum = Output::new(usb_dp.reborrow(), Level::Low, Speed::Low);
     let mut usb_renum = Output::new(usb_renum, Level::Low, Speed::Low);
     Timer::after_millis(10).await;
     usb_renum.set_high();
@@ -84,7 +97,6 @@ async fn main(spawner: Spawner) {
     config.composite_with_iads = true;
 
     // Create embassy-usb DeviceBuilder using the driver and config.
-    static DEVICE_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static CONFIG_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static BOS_DESC: StaticCell<[u8; 256]> = StaticCell::new();
     static MSOS_DESC: StaticCell<[u8; 196]> = StaticCell::new();
@@ -93,7 +105,6 @@ async fn main(spawner: Spawner) {
     let mut builder = Builder::new(
         driver,
         config,
-        &mut DEVICE_DESC.init([0; 256])[..],
         &mut CONFIG_DESC.init([0; 256])[..],
         &mut BOS_DESC.init([0; 256])[..],
         &mut MSOS_DESC.init([0; 196])[..],
@@ -205,12 +216,12 @@ pub enum Dir {
 }
 
 struct Deps {
-    ck: Flex<'static, SwclkPin>,
-    io: Flex<'static, SwdioPin>,
+    ck: Flex<'static>,
+    io: Flex<'static>,
 }
 
 impl Deps {
-    pub fn new(mut ck: Flex<'static, SwclkPin>, mut io: Flex<'static, SwdioPin>) -> Self {
+    pub fn new(mut ck: Flex<'static>, mut io: Flex<'static>) -> Self {
         //io.set_pull(Pull::Up);
         io.set_high();
         io.set_as_output(Speed::VeryHigh);
@@ -336,6 +347,14 @@ impl Dependencies<Deps, Deps> for Deps {
             nbits -= 8;
         }
     }
+
+    fn jtag_config(&mut self) -> &mut dap_rs::jtag::Config {
+        todo!()
+    }
+
+    fn swd_config(&mut self) -> &mut swd::Config {
+        todo!()
+    }
 }
 
 impl dap_rs::swd::Swd<Deps> for Deps {
@@ -353,16 +372,36 @@ impl dap_rs::swd::Swd<Deps> for Deps {
         // todo
         true
     }
+
+    fn write_sequence(&mut self, num_bits: usize, data: &[u8]) -> swd::Result<()> {
+        todo!()
+    }
+
+    fn read_sequence(&mut self, num_bits: usize, data: &mut [u8]) -> swd::Result<()> {
+        todo!()
+    }
+
+    fn config(&mut self) -> &mut swd::Config {
+        todo!()
+    }
 }
 
 impl dap_rs::jtag::Jtag<Deps> for Deps {
     const AVAILABLE: bool = false;
 
-    fn sequences(&mut self, data: &[u8], rxbuf: &mut [u8]) -> u32 {
+    fn set_clock(&mut self, max_frequency: u32) -> bool {
         todo!()
     }
 
-    fn set_clock(&mut self, max_frequency: u32) -> bool {
+    fn config(&mut self) -> &mut dap_rs::jtag::Config {
+        todo!()
+    }
+
+    fn sequence(&mut self, info: dap_rs::jtag::SequenceInfo, tdi: &[u8], rxbuf: &mut [u8]) {
+        todo!()
+    }
+
+    fn tms_sequence(&mut self, tms: &[bool]) {
         todo!()
     }
 }
