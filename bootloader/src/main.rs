@@ -36,11 +36,14 @@ extern "C" {
     static __app_end: u32;
 }
 const PERSIST_BOOT_MAGIC: u32 = 0x93f2af30;
+const PERSIST_ERASE_MAGIC: u32 = 0xf342c1b0;
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
+    let mut erase_requested = false;
     unsafe {
-        let bootloader_requested = __persist == PERSIST_BOOT_MAGIC;
+        erase_requested = __persist == PERSIST_ERASE_MAGIC;
+        let bootloader_requested = __persist == PERSIST_BOOT_MAGIC || erase_requested;
         let valid_app = __app_start != 0xFFFF_FFFF;
 
         // Immediately bootload the app if bootloader mode was not requested.
@@ -72,6 +75,13 @@ fn main() -> ! {
         config.rcc.apb2_pre = APBPrescaler::DIV1;
     }
     let p = embassy_stm32::init(config);
+
+    let mut flash = Flash::new_blocking(p.FLASH);
+    if erase_requested {
+        flash
+            .blocking_erase(app_start_offset(), app_start_offset() + PAGE_SIZE)
+            .unwrap();
+    }
 
     info!("Hello World!");
 
@@ -136,7 +146,7 @@ fn main() -> ! {
     ));
 
     let handler = DfuHandler {
-        flash: Flash::new_blocking(p.FLASH),
+        flash,
         downloaded: false,
         erase: 0,
         write: 0,
