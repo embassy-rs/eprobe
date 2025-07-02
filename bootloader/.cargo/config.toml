@@ -10,7 +10,6 @@ rustflags = [
   "-Ztrap-unreachable=no",
   "-Cno-vectorize-loops",
   "-Cforce-frame-pointers=no",
-  "-Cinline-threshold=100"
 ]
 
 [build]

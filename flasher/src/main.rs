@@ -2,8 +2,9 @@ use std::fs::File;
 
 use probe_rs::{
     config::TargetDescriptionSource,
-    flashing::{DownloadOptions, FlashLoader},
-    Lister, MemoryInterface,
+    flashing::{DownloadOptions, ElfOptions, FlashLoader, Format},
+    probe::{list::Lister, DebugProbe, Probe},
+    MemoryInterface,
 };
 
 const FLASH_ACR: u64 = 0x40022000;
@@ -63,11 +64,11 @@ fn main() {
     let probes = lister.list_all();
     let probe_info = probes
         .into_iter()
-        .find(|p| p.serial_number.as_deref() == Some("370A03145116303030303032"))
+        .find(|p| p.serial_number.as_deref() == Some("1C2703145216303030303032"))
         .unwrap();
     //let probe_info = probes[0];
 
-    let probe = probe_info.open(&lister).unwrap();
+    let probe = probe_info.open().unwrap();
 
     let mut sess = probe.attach("stm32f103c8tx", Default::default()).unwrap();
     let mut core = sess.core(0).unwrap();
@@ -96,8 +97,17 @@ fn main() {
     let mut loader = FlashLoader::new(mmap, TargetDescriptionSource::BuiltIn);
     let mut bl = File::open("bootloader.elf").unwrap();
     let mut app = File::open("application.elf").unwrap();
-    loader.load_elf_data(&mut bl).unwrap();
-    loader.load_elf_data(&mut app).unwrap();
+    loader
+        .load_image(&mut sess, &mut bl, Format::Elf(ElfOptions::default()), None)
+        .unwrap();
+    loader
+        .load_image(
+            &mut sess,
+            &mut app,
+            Format::Elf(ElfOptions::default()),
+            None,
+        )
+        .unwrap();
 
     let mut opts = DownloadOptions::default();
     opts.verify = true;
