@@ -1,6 +1,5 @@
 [unstable]
 build-std = ["core"]
-build-std-features = ["panic_immediate_abort"]
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
 runner = "probe-rs run --chip STM32F103C8 --probe c0de:cafe:1C2703145216303030303032"
@@ -9,6 +8,8 @@ rustflags = [
   "-Ztrap-unreachable=no",
   "-Cno-vectorize-loops",
   "-Cforce-frame-pointers=no",
+  "-Zunstable-options",
+  "-Cpanic=immediate-abort",
 ]
 
 [build]

@@ -23,4 +23,4 @@ llvm-objcopy -O binary build/bootloaderloader.elf build/bootloaderloader.bin
 cp application/target/thumbv7m-none-eabi/release/eprobe build/application.elf
 llvm-objcopy -O binary build/application.elf build/application.bin
 
-#sudo dfu-util -d c0de:cafe,c0de:caff -D application.bin -R
+#sudo dfu-util -d c0de:cafe,c0de:caff -D build/application.bin -R

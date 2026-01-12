@@ -157,7 +157,7 @@ fn main() -> ! {
         | DfuAttributes::WILL_DETACH
         | DfuAttributes::MANIFESTATION_TOLERANT;
     let state = STATE.init(DfuState::new(handler, attrs));
-    usb_dfu(&mut builder, state, CONTROL_BUF_SIZE);
+    usb_dfu(&mut builder, state, CONTROL_BUF_SIZE, |_| {});
 
     // Start USB.
     let mut usb = builder.build();
@@ -229,7 +229,7 @@ impl Handler for DfuHandler {
         Ok(())
     }
 
-    fn reset(&mut self) {
+    fn system_reset(&mut self) {
         info!("reset");
         if self.downloaded {
             cortex_m::peripheral::SCB::sys_reset();
