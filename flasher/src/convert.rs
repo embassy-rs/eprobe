@@ -2,12 +2,19 @@ use std::time::Duration;
 
 use aes::Aes128;
 use cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
+use clap::Parser;
 use hex_literal::hex;
 use log::{info, trace};
 use nusb::{
     transfer::{Bulk, In, Out},
     Endpoint, MaybeFuture,
 };
+
+#[derive(Parser)]
+pub struct Cmd {
+    #[arg(short, long, default_value = "../build/application.bin")]
+    firmware: String,
+}
 
 /// Convert array to/from big-endian format by swapping bytes in 4-byte chunks
 fn byteswap(data: &mut [u8]) {
@@ -31,16 +38,7 @@ fn encrypt(key: &[u8; 16], data: &mut [u8]) {
     byteswap(data);
 }
 
-fn main() {
-    pretty_env_logger::init();
-
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <firmware.bin>", args[0]);
-        std::process::exit(1);
-    }
-    let firmware_path = &args[1];
-
+pub fn run(args: &Cmd) {
     let di = nusb::list_devices()
         .wait()
         .unwrap()
@@ -115,10 +113,10 @@ fn main() {
     );
 
     // Load and flash firmware
-    let data = std::fs::read(firmware_path).expect("Failed to read firmware file");
+    let data = std::fs::read(&args.firmware).expect("Failed to read firmware file");
     info!(
         "Loaded firmware : {}, size : {} bytes",
-        firmware_path,
+        args.firmware,
         data.len()
     );
 

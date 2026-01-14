@@ -9,7 +9,7 @@ edition = "2021"
 aes = "0.8"
 anyhow = "1.0.100"
 cipher = "0.4"
-clap = "4.5.54"
+clap = { version = "4.5.54", features = ["derive"] }
 futures-lite = "2.6.1"
 hex-literal = "1"
 log = "0.4.29"
