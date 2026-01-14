@@ -33,6 +33,14 @@ fn encrypt(key: &[u8; 16], data: &mut [u8]) {
 
 fn main() {
     pretty_env_logger::init();
+
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: {} <firmware.bin>", args[0]);
+        std::process::exit(1);
+    }
+    let firmware_path = &args[1];
+
     let di = nusb::list_devices()
         .wait()
         .unwrap()
@@ -47,26 +55,74 @@ fn main() {
     let mut ep_out = iface.endpoint::<Bulk, Out>(0x02).unwrap();
     let mut ep_in = iface.endpoint::<Bulk, In>(0x81).unwrap();
 
-    cmd(&mut ep_out, &mut ep_in, hex!("f1800000000000000000000000000000"));
+    // Read device info (0xF180 command)
+    let version = cmd(
+        &mut ep_out,
+        &mut ep_in,
+        hex!("f1800000000000000000000000000000"),
+    );
+    let stlink_version = version[0] >> 4;
+    let jtag_version = (version[0] & 0x0F) << 2 | (version[1] & 0xC0) >> 6;
+    let swim_version = version[1] & 0x3F;
+    let loader_version = (version[5] as u16) << 8 | version[4] as u16;
+    info!(
+        "Firmware version : V{}J{}S{}",
+        stlink_version, jtag_version, swim_version
+    );
+    info!("Loader version : {}", loader_version);
 
-    let state = cmd(&mut ep_out, &mut ep_in, hex!("f5000000000000000000000000000000"));
-    if state[0] != 0 {
-        cmd(&mut ep_out, &mut ep_in, hex!("f901"));
+    // Get current mode (0xF5 command)
+    let state = cmd(
+        &mut ep_out,
+        &mut ep_in,
+        hex!("f5000000000000000000000000000000"),
+    );
+    let mode = (state[0] as u16) << 8 | state[1] as u16;
+    info!("Current mode : {}", mode);
+
+    if mode != 1 {
+        eprintln!(
+            "ST-Link dongle is not in the correct mode. Please unplug and plug the dongle again."
+        );
+        std::process::exit(1);
     }
 
+    // Get device ID (0xF308 command)
+    let res = cmd(
+        &mut ep_out,
+        &mut ep_in,
+        hex!("f3080000000000000000000000000000"),
+    );
+
+    // Extract ST-Link ID
+    let mut id = [0u8; 12];
+    id.copy_from_slice(&res[8..20]);
+    info!("ST-Link ID : {:02X?}", id);
+
     // Calculate encryption key
-    let res = cmd(&mut ep_out, &mut ep_in, hex!("f3080000000000000000000000000000"));
     let mut firmware_key = [0u8; 16];
     firmware_key[0..4].copy_from_slice(&res[0..4]);
     firmware_key[4..16].copy_from_slice(&res[8..20]);
     let master_key = b"I am key, wawawa";
     encrypt(master_key, &mut firmware_key);
-    trace!("Firmware key: {:02x?}", firmware_key);
+    info!("Firmware encryption key : {:02X?}", firmware_key);
 
-    cmd(&mut ep_out, &mut ep_in, hex!("f3030000000006000000000000000000"));
+    // Get initial status
+    cmd(
+        &mut ep_out,
+        &mut ep_in,
+        hex!("f3030000000006000000000000000000"),
+    );
 
-    let base_addr = 0x08003000;
-    let data = &include_bytes!("../../../build/bootloaderloader.bin");
+    // Load and flash firmware
+    let data = std::fs::read(firmware_path).expect("Failed to read firmware file");
+    info!(
+        "Loaded firmware : {}, size : {} bytes",
+        firmware_path,
+        data.len()
+    );
+
+    let base_addr = 0x08004000;
     const CHUNK_SIZE: usize = 1024;
     for (i, chunk) in data.chunks(CHUNK_SIZE).enumerate() {
         let chunk_addr = base_addr + (i * CHUNK_SIZE) as u32;
@@ -80,10 +136,15 @@ fn main() {
 
         download(&mut ep_out, &mut ep_in, 2, buf);
         wait(&mut ep_out, &mut ep_in);
+        print!(".");
+        use std::io::Write;
+        std::io::stdout().flush().unwrap();
     }
+    println!();
 
-    // Exit DFU
-    cmd(&mut ep_out, &mut ep_in, hex!("f3070000000006000000000000000000"));
+    // Exit DFU - device will disconnect, so ignore errors
+    bulk_out(&mut ep_out, &hex!("f3070000000006000000000000000000"));
+    // Don't wait for response, device disconnects
 
     println!("done!");
 }
@@ -116,7 +177,12 @@ fn wait(ep_out: &mut Endpoint<Bulk, Out>, ep_in: &mut Endpoint<Bulk, In>) {
     }
 }
 
-fn download(ep_out: &mut Endpoint<Bulk, Out>, _ep_in: &mut Endpoint<Bulk, In>, block_num: u16, data: impl Into<Vec<u8>>) {
+fn download(
+    ep_out: &mut Endpoint<Bulk, Out>,
+    _ep_in: &mut Endpoint<Bulk, In>,
+    block_num: u16,
+    data: impl Into<Vec<u8>>,
+) {
     let data = data.into();
     let mut checksum = 0u16;
     for &b in &data {
@@ -132,7 +198,11 @@ fn download(ep_out: &mut Endpoint<Bulk, Out>, _ep_in: &mut Endpoint<Bulk, In>, b
     bulk_out(ep_out, data);
 }
 
-fn cmd(ep_out: &mut Endpoint<Bulk, Out>, ep_in: &mut Endpoint<Bulk, In>, req: impl Into<Vec<u8>>) -> Vec<u8> {
+fn cmd(
+    ep_out: &mut Endpoint<Bulk, Out>,
+    ep_in: &mut Endpoint<Bulk, In>,
+    req: impl Into<Vec<u8>>,
+) -> Vec<u8> {
     bulk_out(ep_out, req);
     bulk_in(ep_in)
 }
