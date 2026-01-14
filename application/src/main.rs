@@ -274,10 +274,12 @@ impl Handler for Control {
 struct Pin(Flex<'static>);
 
 impl InputOutputPin for Pin {
+    #[inline(always)]
     fn set_as_output(&mut self) {
         self.0.set_as_output(Speed::VeryHigh);
     }
 
+    #[inline(always)]
     fn set_high(&mut self, high: bool) {
         if high {
             self.0.set_high();
@@ -286,10 +288,12 @@ impl InputOutputPin for Pin {
         }
     }
 
+    #[inline(always)]
     fn set_as_input(&mut self) {
         self.0.set_as_input(Pull::None);
     }
 
+    #[inline(always)]
     fn is_high(&mut self) -> bool {
         self.0.is_high()
     }
@@ -312,6 +316,7 @@ impl DelayCycles for CycleDelay {
         CPU_CLOCK
     }
 
+    #[inline(always)]
     fn delay_cycles(&mut self, cycles: u32) {
         cortex_m::asm::delay(cycles);
     }

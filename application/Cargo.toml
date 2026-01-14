@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 #dap-rs = { path = "../dap-rs", features = [ "defmt" ]}
-dap-rs = { git = "https://github.com/probe-rs/dap-rs", rev = "13e632a9357e102802defb8a5db09d41b3a5d844", features = [ "defmt" ]}
+dap-rs = { git = "https://github.com/probe-rs/dap-rs", rev = "41ed5665c65e78af9556d60ce6c5f38ca7bbaa1b", features = [ "defmt" ]}
 
 embassy-stm32 = { version = "0.5", features = [ "defmt", "stm32f103c8", "unstable-pac", "time-driver-any" ]  }
 embassy-sync = { version = "0.7", features = ["defmt"] }
@@ -42,9 +42,9 @@ opt-level = 's'
 overflow-checks = false
 
 [patch.crates-io]
-embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", rev = "dbdc7a47a5b0c8ece58b23a57ba861620d49b635" }
-embassy-sync = { git = "https://github.com/embassy-rs/embassy", rev = "dbdc7a47a5b0c8ece58b23a57ba861620d49b635" }
-embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "dbdc7a47a5b0c8ece58b23a57ba861620d49b635" }
-embassy-time = { git = "https://github.com/embassy-rs/embassy", rev = "dbdc7a47a5b0c8ece58b23a57ba861620d49b635" }
-embassy-usb = { git = "https://github.com/embassy-rs/embassy", rev = "dbdc7a47a5b0c8ece58b23a57ba861620d49b635" }
-embassy-futures = { git = "https://github.com/embassy-rs/embassy", rev = "dbdc7a47a5b0c8ece58b23a57ba861620d49b635" }
+embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", rev = "959ec78ec46c6af0455ad111ee33524def8dde40" }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy", rev = "959ec78ec46c6af0455ad111ee33524def8dde40" }
+embassy-executor = { git = "https://github.com/embassy-rs/embassy", rev = "959ec78ec46c6af0455ad111ee33524def8dde40" }
+embassy-time = { git = "https://github.com/embassy-rs/embassy", rev = "959ec78ec46c6af0455ad111ee33524def8dde40" }
+embassy-usb = { git = "https://github.com/embassy-rs/embassy", rev = "959ec78ec46c6af0455ad111ee33524def8dde40" }
+embassy-futures = { git = "https://github.com/embassy-rs/embassy", rev = "959ec78ec46c6af0455ad111ee33524def8dde40" }

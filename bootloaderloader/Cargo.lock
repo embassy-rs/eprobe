@@ -125,7 +125,7 @@ dependencies = [
 [[package]]
 name = "embassy-embedded-hal"
 version = "0.5.0"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 dependencies = [
  "embassy-futures",
  "embassy-hal-internal",
@@ -141,12 +141,12 @@ dependencies = [
 [[package]]
 name = "embassy-futures"
 version = "0.1.2"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 
 [[package]]
 name = "embassy-hal-internal"
 version = "0.4.0"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 dependencies = [
  "cortex-m",
  "critical-section",
@@ -156,12 +156,12 @@ dependencies = [
 [[package]]
 name = "embassy-net-driver"
 version = "0.2.0"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 
 [[package]]
 name = "embassy-stm32"
 version = "0.5.0"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 dependencies = [
  "aligned",
  "bit_field",
@@ -207,7 +207,7 @@ dependencies = [
 [[package]]
 name = "embassy-sync"
 version = "0.7.2"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 dependencies = [
  "cfg-if",
  "critical-section",
@@ -220,7 +220,7 @@ dependencies = [
 [[package]]
 name = "embassy-usb-driver"
 version = "0.2.0"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 dependencies = [
  "embedded-io-async",
 ]
@@ -228,7 +228,7 @@ dependencies = [
 [[package]]
 name = "embassy-usb-synopsys-otg"
 version = "0.3.1"
-source = "git+https://github.com/embassy-rs/embassy?rev=dbdc7a47a5b0c8ece58b23a57ba861620d49b635#dbdc7a47a5b0c8ece58b23a57ba861620d49b635"
+source = "git+https://github.com/embassy-rs/embassy?rev=959ec78ec46c6af0455ad111ee33524def8dde40#959ec78ec46c6af0455ad111ee33524def8dde40"
 dependencies = [
  "critical-section",
  "embassy-sync",
@@ -510,8 +510,7 @@ dependencies = [
 [[package]]
 name = "stm32-metapac"
 version = "19.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a411079520dbccc613af73172f944b7cf97ba84e3bd7381a0352b6ec7bfef03b"
+source = "git+https://github.com/embassy-rs/stm32-data-generated?tag=stm32-data-82bd86bd321ba1a682f5b39463a93dcb014e0d94#2dd4e5f21572146cf1c7fed8a4ccf647a5ed3549"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
